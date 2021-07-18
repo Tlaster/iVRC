@@ -1,0 +1,11 @@
+{
+  "license": "MIT",
+  "scripts": {
+    "generateDart": "cd build/api && pub get && pub run build_runner build",
+    "generateApi": "openapi-generator-cli generate -i specification/openapi.yaml -g dart-dio-next -o build/api",
+    "build": "yarn generateApi && yarn generateDart"
+  },
+  "devDependencies": {
+    "@openapitools/openapi-generator-cli": "^2.3.7"
+  }
+}
