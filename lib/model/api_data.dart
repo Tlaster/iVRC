@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:ivrc/services/api.dart';
 import 'package:openapi/openapi.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -6,27 +9,38 @@ const String _tokenKey = 'token';
 
 class ApiData extends ChangeNotifier {
   Config? _config;
-  String? _accessToken;
+  Api? _api;
+  String? _token;
 
   //update config
-  void setConfig(Config config) {
+  Future<void> setConfig(Config config) async {
     _config = config;
+    final apiKey = _config?.apiKey;
+    if (apiKey != null) {
+      final token = await loadToken();
+      final api = Api(apiKey);
+      if (token != null) {
+        api.setCookie(jsonDecode(token));
+      }
+      _api = api;
+      _token = token;
+    }
   }
 
-  Future<void> setToken(String token) async {
-    _accessToken = token;
-  }
-
+  //get api
+  Api getApi() => _api!;
+  bool isLoggedIn() => _token != null;
   //check if current config is not null
   bool isConfigSet() => _config != null;
-  //check if current token is not null
-  bool isLoggedIn() => _accessToken != null;
-  //get the current token
-  String? getToken() => _accessToken;
   // get the current config
   Config? getConfig() => _config;
   // get api key
   String? get apiKey => _config?.apiKey;
+
+  Future<void> save() async {
+    await saveToken(jsonEncode(getApi().getCookie()));
+  }
+
   //save the current token to shared preferences
   Future<void> saveToken(String? token) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -35,16 +49,16 @@ class ApiData extends ChangeNotifier {
     } else {
       await prefs.remove(_tokenKey);
     }
-    _accessToken = token;
+    _token = token;
   }
 
-  Future<void> tryLoadToken() async {
+  Future<String?> loadToken() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     if (prefs.containsKey(_tokenKey)) {
       final token = prefs.getString(_tokenKey);
-      _accessToken = token;
+      return token;
     } else {
-      _accessToken = null;
+      return null;
     }
   }
 }

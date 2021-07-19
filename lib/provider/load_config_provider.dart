@@ -15,7 +15,7 @@ class LoadConfigProvider extends ChangeNotifier {
   Future<Config> init() async {
     final result = await ConfigRepository().getConfig();
     if (result != null) {
-      _apiData.setConfig(result);
+      await _apiData.setConfig(result);
       return result;
     } else {
       throw Exception("can not fetch config");

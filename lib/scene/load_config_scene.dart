@@ -17,13 +17,17 @@ class LoadConfigScene extends StatelessWidget {
       create: (context) => LoadConfigProvider(
         context.read<ApiData>(),
       ),
-      child: const _LoadConfigSceneContent(),
+      child: _LoadConfigSceneContent(
+        redirectUri: redirectUri,
+      ),
     );
   }
 }
 
 class _LoadConfigSceneContent extends StatelessWidget {
-  const _LoadConfigSceneContent({Key? key}) : super(key: key);
+  final String redirectUri;
+  const _LoadConfigSceneContent({Key? key, required this.redirectUri})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -40,8 +44,11 @@ class _LoadConfigSceneContent extends StatelessWidget {
                   Text(snapshot.error.toString()),
                 ],
               );
-            } else {
+            } else if (!snapshot.hasData) {
               return const CircularProgressIndicator();
+            } else {
+              Navigator.of(context).pushReplacementNamed(redirectUri);
+              return const Text("success");
             }
           },
         ),

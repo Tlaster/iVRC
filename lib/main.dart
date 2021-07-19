@@ -5,12 +5,10 @@ import 'package:provider/provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  final initialData = ApiData();
-  await initialData.tryLoadToken();
   runApp(
     MultiProvider(
       providers: [
-        ChangeNotifierProvider<ApiData>(create: (_) => initialData),
+        ChangeNotifierProvider<ApiData>(create: (_) => ApiData()),
       ],
       child: const App(),
     ),

@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:ivrc/model/api_data.dart';
 import 'package:ivrc/services/api.dart';
@@ -23,7 +21,7 @@ class LoginProvider extends ChangeNotifier {
       return LoginFailure(Exception("LoginProvider: name or password not set"));
     }
     try {
-      final data = await Api().login(nameCopy, passwordCopy, apiKey);
+      await apiData.getApi().login(nameCopy, passwordCopy);
       return LoginSuccess();
     } on TwofactorException catch (e) {
       return LoginRequire2FA();
@@ -31,21 +29,30 @@ class LoginProvider extends ChangeNotifier {
   }
 
   Future<LoginResultState> loginWith2FA() async {
+    final apiKey = apiData.apiKey;
+    if (apiKey == null || apiKey.isEmpty) {
+      return LoginFailure(Exception("no api key"));
+    }
     final nameCopy = name;
     final passwordCopy = password;
-    final codeCopy = code;
-    if (nameCopy == null || passwordCopy == null || codeCopy == null) {
-      return LoginFailure(
-          Exception("LoginProvider: name or password or code not set"));
+    if (nameCopy == null || passwordCopy == null) {
+      return LoginFailure(Exception("LoginProvider: name or password not set"));
     }
-    final auth = _authEnc(nameCopy, passwordCopy);
-    return LoginFailure(Exception("LoginProvider: 2FA not supported"));
-  }
-
-  String _authEnc(String nameCopy, String passwordCopy) {
-    final nameEnc = Uri.encodeComponent(nameCopy);
-    final passwordEnc = Uri.encodeComponent(passwordCopy);
-    return base64.encode(utf8.encode("$nameEnc:$passwordEnc"));
+    final codeCopy = code;
+    if (codeCopy == null) {
+      return LoginFailure(Exception("LoginProvider: code not set"));
+    }
+    try {
+      final result = await apiData.getApi().verity2FA(codeCopy);
+      if (!result) {
+        return LoginFailure(Exception("LoginProvider: invalid code"));
+      }
+      await apiData.getApi().login(nameCopy, passwordCopy);
+      await apiData.save();
+      return LoginSuccess();
+    } on TwofactorException catch (e) {
+      return LoginRequire2FA();
+    }
   }
 }
 
